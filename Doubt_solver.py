@@ -15,7 +15,7 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key="AIzaSyBUrEfhqrOO_ImRX5mx-0SeJUjOAQsM5DU")
 model = genai.GenerativeModel(model_name="gemini-1.5-pro")
 def get_ai_response(query):
     try:
@@ -75,33 +75,29 @@ language = st.selectbox("Preferred Language:", ["English", "Hindi", "Odia"])
 
 
 st.markdown("### 🎙 Or Upload an Audio Doubt")
-uploaded_audio = st.file_uploader("Upload audio (WAV or MP3)", type=["wav", "mp3"])
+import tempfile
+
+audio_input = st.audio_input("🎤 Speak your doubt (optional)")
 transcribed_text = ""
 
-if uploaded_audio is not None:
-    st.audio(uploaded_audio, format='audio/wav')
+if audio_input:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        tmpfile.write(audio_input.getbuffer())
+        tmpfile_path = tmpfile.name
 
-   
-    if uploaded_audio.type == "audio/mpeg":
-        audio = AudioSegment.from_mp3(uploaded_audio)
-    else:
-        audio = AudioSegment.from_wav(uploaded_audio)
-
-    audio.export("temp.wav", format="wav")
     recognizer = sr.Recognizer()
-
-    with sr.AudioFile("temp.wav") as source:
-        audio_data = recognizer.record(source)
+    with sr.AudioFile(tmpfile_path) as source:
         try:
-            transcribed_text = recognizer.recognize_google(audio_data)
-            st.success(f"✅ Transcribed Text: {transcribed_text}")
+            audio = recognizer.record(source)
+            transcribed_text = recognizer.recognize_google(audio)
+            st.success(f"📝 Transcribed: {transcribed_text}")
         except sr.UnknownValueError:
-            st.error("❌ Could not understand audio.")
+            st.error("Could not understand the audio.")
         except sr.RequestError as e:
-            st.error(f"❌ API error: {e}")
+            st.error(f"Speech Recognition error: {e}")
 
+query = st.text_area("Type your doubt:", value=transcribed_text
 
-query = st.text_area("✍ Enter your doubt below:", value=transcribed_text)
 
 if st.button("🧠 Clear My Doubt"):
     if not query.strip():
