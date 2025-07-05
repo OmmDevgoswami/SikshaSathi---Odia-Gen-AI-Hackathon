@@ -12,27 +12,18 @@ def mentor_slot(special_mentor, _):
             <h4>Level: Expert — {random.choice(Levels)}</h4>
             <p>“Helping you crack concepts, one formula at a time!”</p>
         </div>
-        """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)    
 
-        # Generate slots only once per mentor
-        if special_mentor not in st.session_state.mentor_slots:
-            start_time = datetime.strptime("09:00", "%H:%M")
-            slots = [start_time + timedelta(minutes=30 * i) for i in range(4, 12)]
-            st.session_state.mentor_slots[special_mentor] = random.sample(slots, k=3)
+        start_time = datetime.strptime("09:00", "%H:%M")
+        slots = [start_time + timedelta(minutes=30 * i) for i in range(4, 12)]  
+        time_slots = random.sample(slots, k=3)  
 
-        time_slots = st.session_state.mentor_slots[special_mentor]
-        time_labels = [t.strftime("%I:%M %p") for t in sorted(time_slots)]
-
-        # Selectbox instead of multiple buttons
-        selected_time = st.selectbox(f"Available Slots with {special_mentor}:", ["Select a Time"] + time_labels, key=f"slot_{special_mentor}")
-
-        if selected_time != "Select a Time":
-            if st.button("📅 Book This Slot", key=f"book_{special_mentor}"):
-                st.session_state.booking_info = {"mentor": special_mentor, "time": selected_time}
-                st.session_state.show_dialog = True
-                st.rerun()
-                               
-
+        time_cols = st.columns(3)
+        for i, t in enumerate(sorted(time_slots)):
+            time_label = t.strftime("%I:%M %p")
+            with time_cols[i]:
+                st.button(time_label, key=f"{special_mentor}_{time_label}")
+                     
 st.markdown("""
 <div style='text-align: center;'>
     <h1 style='text-align: center;'> SikshaSathi - ଶିକ୍ଷାସାଥୀ </h1>
