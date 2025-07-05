@@ -1,89 +1,132 @@
+#Educhain
+user_logs = []
+
+def log_doubt(query, answer, videos):
+    user_logs.append({
+        "question": query,
+        "answer": answer,
+        "videos": videos
+    })
+
+def get_all_logs():
+    return user_logs
+#gemini_llm
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+def get_ai_response(query):
+    try:
+        response = model.generate_content(f"Answer this student's doubt: {query}")
+        return response.text
+    except Exception as e:
+        return f"Error: {e}"
+#Youtube_search
+def get_youtube_links(query, max_results=2):
+    prompt = (
+        f"Suggest {max_results} highly relevant YouTube video links for the following "
+        f"NEET/JEE/UPSC/Class XII doubt:\n\n{query}\n\n"
+        f"Only return direct YouTube URLs, each on a new line."
+    )
+    response = get_ai_response(prompt)
+    links = [line.strip() for line in response.split("\n") if "youtube.com/watch" in line]
+    return links[:max_results]
+#main.py
 import streamlit as st
-import random
-from datetime import datetime, timedelta
+from googletrans import Translator
+import speech_recognition as sr
+from pydub import AudioSegment
 
-# Initialize session state keys
-if "show_dialog" not in st.session_state:
-    st.session_state.show_dialog = False
-if "booking_info" not in st.session_state:
-    st.session_state.booking_info = None
-if "mentor_slots" not in st.session_state:
-    st.session_state.mentor_slots = {}
-
-# Dialog always defined ONCE
-@st.dialog("📅 Book Session")
-def booking_dialog():
-    booking = st.session_state.booking_info
-    if booking:
-        mentor = booking["mentor"]
-        time = booking["time"]
-        st.write(f"You're about to book a session with **{mentor}** at **{time}**.")
-        name = st.text_input("Your Name")
-        email = st.text_input("Your Email")
-        if st.button("✅ Confirm Booking"):
-            st.session_state.booking = {
-                "mentor": mentor,
-                "time": time,
-                "name": name,
-                "email": email
-            }
-            st.success("Booking Confirmed!")
-            st.balloons()
-            st.session_state.show_dialog = False
-            st.session_state.booking_info = None
-            st.rerun()
-
-# Show dialog if flag is set, then immediately reset the flag to avoid auto-trigger
-if st.session_state.show_dialog:
-    booking_dialog()
-    st.session_state.show_dialog = False  # Reset immediately ✅
-
-def mentor_slot(special_mentor, _):
-    with st.expander(f"📘 Meet {special_mentor}"):
-        st.write(f"Subject: Random Subject")
-
-        if special_mentor not in st.session_state.mentor_slots:
-            start_time = datetime.strptime("09:00", "%H:%M")
-            slots = [start_time + timedelta(minutes=30 * i) for i in range(4, 12)]
-            st.session_state.mentor_slots[special_mentor] = random.sample(slots, k=3)
-
-        time_slots = st.session_state.mentor_slots[special_mentor]
-
-        time_cols = st.columns(3)
-        for i, t in enumerate(sorted(time_slots)):
-            time_label = t.strftime("%I:%M %p")
-            with time_cols[i]:
-                if st.button(time_label, key=f"{special_mentor}_{time_label}"):
-                    st.session_state.booking_info = {"mentor": special_mentor, "time": time_label}
-                    st.session_state.show_dialog = True
-                    st.rerun()
-
-# Sample mentors to trigger
-mentor_slot("Dharmeshwar Mehta", 0)
-mentor_slot("Shalini Kapur", 1)
+st.set_page_config(page_title="SikshaSathi", page_icon="📘", layout="wide")
 
 
+with st.sidebar:
+   # st.image("assets/banner.png", use_container_width=True)  # ✅ FIXED
+    st.title("📘 SikshaSathi")
+    st.markdown("*Welcome to SikshaSathi - ଶିକ୍ଷାସାଥୀ!*")
+    st.markdown("Doubt Assistant-ସ‌ହ‌ଯୋଗୀ ଶିକ୍ଷା")
+    st.markdown("---")
+    # st.markdown("🧭 Pages:")
+    # st.markdown("- Main (You’re here!)")
+    # st.markdown("- Roadmap Generator")
+    # st.markdown("- Doubt Solver")
+    # st.markdown("- Mock Test")
 
-def mentor_slot(special_mentor, _):
-    with st.expander(f"📘 Meet {special_mentor}"):
-        st.markdown(f"""
-        <div class='mentor-card'>
-            <img src='{mentor_dict[special_mentor]}' alt='mentor face' width='150' />
-            <h3>{special_mentor}</h3>
-            <h4>Subject: {random.choice(subjects)}</h4>
-            <h4>Level: Expert — {random.choice(Levels)}</h4>
-            <p>“Helping you crack concepts, one formula at a time!”</p>
-        </div>
-        """, unsafe_allow_html=True)    
 
-        start_time = datetime.strptime("09:00", "%H:%M")
-        slots = [start_time + timedelta(minutes=30 * i) for i in range(4, 12)]  
-        time_slots = random.sample(slots, k=3)  
+st.markdown(
+    """
+    <div style='text-align: center;'>
+        <h1 style='font-family: Space Grotesk, sans-serif;'>SikshaSathi - ଶିକ୍ଷାସାଥୀ</h1>
+         <h2 style='font-family: Space Grotesk, sans-serif;'>Doubt Assistant-ସ‌ହ‌ଯୋଗୀ ଶିକ୍ଷା</h2>
+          <h3 style='font-family: Space Grotesk, sans-serif;'>"Confused? Let SikshaSathi clear the air - one doubt at a time!"</h3>
+       
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-        time_cols = st.columns(3)
-        for i, t in enumerate(sorted(time_slots)):
-            time_label = t.strftime("%I:%M %p")
-            with time_cols[i]:
-                if st.button(time_label, key=f"{special_mentor}_{time_label}"):
-                    st.session_state.booking_info = {"mentor": f"{special_mentor}", "time": f"{time_label}"}
-                    booking_dialog()      
+
+st.subheader("📚 Ask Your Doubt")
+
+exam_type = st.selectbox("Choose Exam:", ["NEET", "JEE", "UPSC", "Class XII"])
+language = st.selectbox("Preferred Language:", ["English", "Hindi", "Odia"])
+
+
+st.markdown("### 🎙 Or Upload an Audio Doubt")
+uploaded_audio = st.file_uploader("Upload audio (WAV or MP3)", type=["wav", "mp3"])
+transcribed_text = ""
+
+if uploaded_audio is not None:
+    st.audio(uploaded_audio, format='audio/wav')
+
+   
+    if uploaded_audio.type == "audio/mpeg":
+        audio = AudioSegment.from_mp3(uploaded_audio)
+    else:
+        audio = AudioSegment.from_wav(uploaded_audio)
+
+    audio.export("temp.wav", format="wav")
+    recognizer = sr.Recognizer()
+
+    with sr.AudioFile("temp.wav") as source:
+        audio_data = recognizer.record(source)
+        try:
+            transcribed_text = recognizer.recognize_google(audio_data)
+            st.success(f"✅ Transcribed Text: {transcribed_text}")
+        except sr.UnknownValueError:
+            st.error("❌ Could not understand audio.")
+        except sr.RequestError as e:
+            st.error(f"❌ API error: {e}")
+
+
+query = st.text_area("✍ Enter your doubt below:", value=transcribed_text)
+
+if st.button("🧠 Clear My Doubt"):
+    if not query.strip():
+        st.warning("⚠ Please enter a valid doubt.")
+    else:
+        full_query = f"{exam_type} Doubt: {query}"
+        answer = get_ai_response(full_query)
+        videos = get_youtube_links(query)
+        log_doubt(full_query, answer, videos)
+
+        st.markdown("### ✅ AI Answer:")
+        st.write(answer)
+
+        if language != "English":
+            try:
+                translator = Translator()
+                lang_code = {"Hindi": "hi", "Odia": "or"}[language]
+                translated = translator.translate(answer, dest=lang_code).text
+                st.markdown(f"### 🌐 Translated Answer ({language}):")
+                st.write(translated)
+            except Exception:
+                st.warning("⚠ Translation unavailable right now.")
+
+        st.markdown("### 📺 Recommended Videos:")
+        for link in videos:
+            st.markdown(f"[Watch here]({link})")
+
+        st.success("✅ Doubt saved with EduChain!")
