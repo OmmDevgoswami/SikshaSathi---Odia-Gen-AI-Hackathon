@@ -1,1 +1,1 @@
-# SikshaSathi---Odia-Gen-AI-Hackathon
+# SikshaSathi
