@@ -1,129 +1,90 @@
 import streamlit as st
-import random 
-from datetime import datetime, timedelta
+import requests
 
-def mentor_slot(special_mentor, _):
-    with st.expander(f"📘 Meet {special_mentor}"):
-        st.markdown(f"""
-        <div class='mentor-card'>
-            <img src='{mentor_dict[special_mentor]}' alt='mentor face' width='150' />
-            <h3>{special_mentor}</h3>
-            <h4>Subject: {random.choice(subjects)}</h4>
-            <h4>Level: Expert — {random.choice(Levels)}</h4>
-            <p>“Helping you crack concepts, one formula at a time!”</p>
-        </div>
-        """, unsafe_allow_html=True)    
+# Sheetly API Config
+SHEETLY_API_URL = "https://api.sheety.co/690912ab2d5431ff9ad361fb8b81f47a/sessioRecord/sheet1"
+SHEETLY_API_KEY = "Bearer hackathonlist"
 
-        start_time = datetime.strptime("09:00", "%H:%M")
-        slots = [start_time + timedelta(minutes=30 * i) for i in range(4, 12)]  
-        time_slots = random.sample(slots, k=3)  
+# Hardcoded Mentors, Subjects, and Multiple Time Slots
+mentor_data = {
+    "JEE": {
+        "Mathematics": {"mentor": "Dharmeshwar Mehta", "times": ["10:00 AM", "11:00 AM", "2:00 PM"]},
+        "Physics": {"mentor": "Shalini Kapur", "times": ["11:00 AM", "1:00 PM", "3:00 PM"]},
+        "Chemistry": {"mentor": "Kritivya", "times": ["12:00 PM", "2:30 PM", "4:00 PM"]},
+    },
+    "NEET": {
+        "Biology": {"mentor": "Ananya Talwar", "times": ["10:30 AM", "12:30 PM", "3:30 PM"]},
+        "Physics": {"mentor": "Vishwajeet Patil", "times": ["11:30 AM", "1:30 PM", "4:30 PM"]},
+        "Chemistry": {"mentor": "Rishabh Dhanraj", "times": ["12:30 PM", "2:00 PM", "5:00 PM"]},
+    },
+    "UPSC": {
+        "General Knowledge": {"mentor": "Sunil Rao", "times": ["09:00 AM", "11:00 AM", "1:00 PM"]},
+        "History": {"mentor": "Vedant Rane", "times": ["10:00 AM", "12:00 PM", "2:00 PM"]},
+        "Politics": {"mentor": "Shivanik Sharma", "times": ["11:00 AM", "1:00 PM", "3:00 PM"]},
+    }
+}
 
-        time_cols = st.columns(3)
-        for i, t in enumerate(sorted(time_slots)):
-            time_label = t.strftime("%I:%M %p")
-            with time_cols[i]:
-                st.button(time_label, key=f"{special_mentor}_{time_label}")
-                     
+mentor_images = {
+    "Dharmeshwar Mehta": "https://ik.imagekit.io/o0nppkxow/Faces/per1.jpeg",
+    "Shalini Kapur": "https://ik.imagekit.io/o0nppkxow/Faces/per2.jpeg",
+    "Kritivya": "https://ik.imagekit.io/o0nppkxow/Faces/per3.jpeg",
+    "Ananya Talwar": "https://ik.imagekit.io/o0nppkxow/Faces/per8.jpeg",
+    "Vishwajeet Patil": "https://ik.imagekit.io/o0nppkxow/Faces/per6.jpeg",
+    "Rishabh Dhanraj": "https://ik.imagekit.io/o0nppkxow/Faces/per5.jpeg",
+    "Sunil Rao": "https://ik.imagekit.io/o0nppkxow/Faces/per10.jpeg",
+    "Vedant Rane": "https://ik.imagekit.io/o0nppkxow/Faces/per9.jpeg",
+    "Shivanik Sharma": "https://ik.imagekit.io/o0nppkxow/Faces/per7.jpeg",
+}
+
+# Function to create mentor slot card
+def mentor_slot(subject, mentor_name, time_slots):
+    with st.expander(f"📘 {subject} — Meet {mentor_name}"):
+        st.image(mentor_images.get(mentor_name, ""), width=150)
+        st.markdown(f"**Subject:** {subject}")
+        st.markdown(f"**Mentor:** {mentor_name}")
+
+        selected_time = st.selectbox("Pick a Time Slot", time_slots, key=f"time_{subject}")
+
+        name = st.text_input("Your Name", key=f"name_{subject}")
+        email = st.text_input("Your Email", key=f"email_{subject}")
+
+        if st.button("Confirm Booking", key=f"btn_{subject}"):
+            if name and email:
+                booking_data = {
+                    "Mentor": mentor_name,
+                    "Subject": subject,
+                    "Time Slot": selected_time,
+                    "User Name": name,
+                    "User Email": email
+                }
+                headers = {
+                    "Authorization": f"{SHEETLY_API_KEY}",  # Already has 'Bearer'
+                    "Content-Type": "application/json"
+                }
+                response = requests.post(SHEETLY_API_URL, json={"sheet1": booking_data}, headers=headers)  # <-- lowercase 'sheet1
+
+                if response.status_code == 200:
+                    st.success("Booking Confirmed and Saved!")
+                else:
+                    st.error("Failed to save booking. Please check your Sheet and tab name.")
+            else:
+                st.warning("Please enter both Name and Email.")
+
+
+
+# Main UI
 st.markdown("""
 <div style='text-align: center;'>
-    <h1 style='text-align: center;'> SikshaSathi - ଶିକ୍ଷାସାଥୀ </h1>
-    <br />
-    <h2> GuruTalks </h2>
-    <h3> From Questions to Confidence — Your Personal Mentor Awaits !! </h3>
+    <h1>SikshaSathi - ଶିକ୍ଷାସାଥୀ</h1>
+    <h2>GuruTalks</h2>
+    <h3>From Questions to Confidence — Your Personal Mentor Awaits!</h3>
 </div>
 """, unsafe_allow_html=True)
 
-mentor_list = ["Dharmeshwar Mehta", "Shalini Kapur", "Kritivya", "Arvindesh Kumar", "Rishabh Dhanraj", "Vishwajeet Patil", "Shivanik Sharma", "Ananya Talwar", "Vedant Rane", "Sunil Rao"]
+exam_choice = st.selectbox("Choose your target exam:", ("JEE", "NEET", "UPSC"), index=None, placeholder="Entrance Preparation...")
 
-mentor_dict = {
-    "Dharmeshwar Mehta" : "https://ik.imagekit.io/o0nppkxow/Faces/per1.jpeg?updatedAt=1751628636578" ,
-    "Shalini Kapur" : "https://ik.imagekit.io/o0nppkxow/Faces/per2.jpeg?updatedAt=1751628636578",
-    "Kritivya" : "https://ik.imagekit.io/o0nppkxow/Faces/per3.jpeg?updatedAt=1751628636578",
-    "Arvindesh Kumar" : "https://ik.imagekit.io/o0nppkxow/Faces/per4.jpeg?updatedAt=1751628636578",
-    "Rishabh Dhanraj" : "https://ik.imagekit.io/o0nppkxow/Faces/per5.jpeg?updatedAt=1751628636578",
-    "Vishwajeet Patil" : "https://ik.imagekit.io/o0nppkxow/Faces/per6.jpeg?updatedAt=1751628636578",
-    "Shivanik Sharma" : "https://ik.imagekit.io/o0nppkxow/Faces/per7.jpeg?updatedAt=1751628636578",
-    "Ananya Talwar" : "https://ik.imagekit.io/o0nppkxow/Faces/per8.jpeg?updatedAt=1751628636578",
-    "Vedant Rane" : "https://ik.imagekit.io/o0nppkxow/Faces/per9.jpeg?updatedAt=1751628636578",
-    "Sunil Rao" : "https://ik.imagekit.io/o0nppkxow/Faces/per10.jpeg?updatedAt=1751628636578",
-}
-
-card_style = """
-    <style>
-    .mentor-card {
-        background-color: #f9f9f9;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        text-align: center;
-        width: 300px;
-        margin: 0 auto;
-    }
-    .mentor-card img {
-        border-radius: 50%;
-        margin-bottom: 15px;
-    }
-    .mentor-card h3 {
-        margin: 10px 0 5px 0;
-        color: #4B0082;
-    }
-    .mentor-card h4 {
-        margin: 5px 0;
-        color: #555;
-    }
-    .mentor-card p {
-        margin: 8px 0;
-        color: #999;
-    }
-    </style>
-"""
-
-st.markdown(card_style, unsafe_allow_html=True)
-
-exam_choice = st.selectbox("Choose your target exam that you wish to Crack !!",
-    ("JEE", "NEET", "UPSC"),
-    index = None,
-    placeholder = "Entrance Preparation..."    
-)
-
-if exam_choice == "JEE":
-    subjects = ["Mathematics", "Physics", "Chemistry"]
-    Levels = ["Olympiad Medalist (Math/Physics/CS)", "IIT Gold Medalist", "KVPY Scholar", "IIM Graduate", "MIT Research Fellow", "Harvard Certified Educator", "ISRO Scientist — Space & Physics Coach", "IT Gold Medalist & JEE Expert"]
-    stored = []
-    teachers = random.randint(2, 7)
-    cols = st.columns(teachers//2)
-    
-    for _ in range(0 , teachers//2):
-        with cols[_]:
-            special_mentor = random.choice(mentor_list)
-            if special_mentor not in stored:
-                stored.append(special_mentor)
-                mentor_slot(special_mentor, _)
-                
-elif exam_choice == "NEET":
-    subjects = ["Biology", "Physics", "Chemistry"]
-    Levels = ["Olympiad Medalist (Math/Physics/CS)", "KVPY Scholar", "MIT Research Fellow", "Harvard Certified Educator", "ISRO Scientist — Space & Physics Coach", "NEET Top Ranker", "Cambridge Fellow", "Stanford Graduate"]
-    stored = []
-    teachers = random.randint(2, 7)
-    cols = st.columns(teachers//2)
-    
-    for _ in range(0 , teachers//2):
-        with cols[_]:
-            special_mentor = random.choice(mentor_list)
-            if special_mentor not in stored:
-                stored.append(special_mentor)
-                mentor_slot(special_mentor, _)
-                
-elif exam_choice == "UPSC":
-    subjects = ["General Knowledge", "History", "Poltics", "Current Affairs", "Reasoning", "Apptitude"]
-    Levels = ["KVPY Scholar", "MIT Research Fellow", "Master Trainer", "Subject Matter Expert (SME)" , "Certified Life Coach"]
-    stored = []
-    teachers = random.randint(2, 7)
-    cols = st.columns(teachers//2)
-    
-    for _ in range(0 , teachers//2):
-        with cols[_]:
-            special_mentor = random.choice(mentor_list)
-            if special_mentor not in stored:
-                stored.append(special_mentor)
-                mentor_slot(special_mentor, _)
+if exam_choice:
+    subjects = list(mentor_data[exam_choice].keys())
+    for subject in subjects:
+        mentor_info = mentor_data[exam_choice][subject]
+        mentor_slot(subject, mentor_info["mentor"], mentor_info["times"])
