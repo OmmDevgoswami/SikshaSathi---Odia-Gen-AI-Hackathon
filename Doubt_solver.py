@@ -1,81 +1,51 @@
-#Educhain
-user_logs = []
-
-def log_doubt(query, answer, videos):
-    user_logs.append({
-        "question": query,
-        "answer": answer,
-        "videos": videos
-    })
-
-def get_all_logs():
-    return user_logs
-#gemini_llm
-import google.generativeai as genai
 import os
-from dotenv import load_dotenv
-load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-def get_ai_response(query):
-    try:
-        response = model.generate_content(f"Answer this student's doubt: {query}")
-        return response.text
-    except Exception as e:
-        return f"Error: {e}"
-#Youtube_search
-def get_youtube_links(query, max_results=2):
-    prompt = (
-        f"Suggest {max_results} highly relevant YouTube video links for the following "
-        f"NEET/JEE/UPSC/Class XII doubt:\n\n{query}\n\n"
-        f"Only return direct YouTube URLs, each on a new line."
-    )
-    response = get_ai_response(prompt)
-    links = [line.strip() for line in response.split("\n") if "youtube.com/watch" in line]
-    return links[:max_results]
-#main.py
 import streamlit as st
+from agno.agent import Agent
+from agno.models.openai.like import OpenAILike
+from agno.tools.tavily import TavilyTools
+from dotenv import load_dotenv
 from googletrans import Translator
 import speech_recognition as sr
 from pydub import AudioSegment
 import tempfile
+import langdetect
 
-st.set_page_config(page_title="SikshaSathi", page_icon="📘", layout="wide")
+load_dotenv()
 
+SUTRA_API_KEY = os.getenv("SUTRA_API_KEY")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-with st.sidebar:
-   # st.image("assets/banner.png", use_container_width=True)  # ✅ FIXED
-    st.title("📘 SikshaSathi")
-    st.markdown("*Welcome to SikshaSathi - ଶିକ୍ଷାସାଥୀ!*")
-    st.markdown("Doubt Assistant-ସ‌ହ‌ଯୋଗୀ ଶିକ୍ଷା")
-    st.markdown("---")
-    # st.markdown("🧭 Pages:")
-    # st.markdown("- Main (You’re here!)")
-    # st.markdown("- Roadmap Generator")
-    # st.markdown("- Doubt Solver")
-    # st.markdown("- Mock Test")
-
-
-st.markdown(
-    """
-    <div style='text-align: center;'>
-        <h1 style='font-family: Space Grotesk, sans-serif;'>SikshaSathi - ଶିକ୍ଷାସାଥୀ</h1>
-         <h2 style='font-family: Space Grotesk, sans-serif;'>Doubt Assistant-ସ‌ହ‌ଯୋଗୀ ଶିକ୍ଷା</h2>
-          <h3 style='font-family: Space Grotesk, sans-serif;'>"Confused? Let SikshaSathi clear the air - one doubt at a time!"</h3>
-       
-    </div>
-    """,
-    unsafe_allow_html=True
+sutra_model = OpenAILike(
+    id="sutra-v2",
+    api_key=SUTRA_API_KEY,
+    base_url="https://api.two.ai/v2"
 )
 
+sutra_tools = [TavilyTools(api_key=TAVILY_API_KEY)] if TAVILY_API_KEY else []
 
-st.subheader("📚 Ask Your Doubt")
+sutra_agent = Agent(
+    name="SikshaSathi Doubt Solver",
+    model=sutra_model,
+    tools=sutra_tools,
+    instructions=[
+        "Be clear, simple, and student-friendly.",
+        "Answer doubts related to NEET, JEE, UPSC, or Class XII with helpful context.",
+        "Where possible, suggest relevant YouTube videos for better understanding using Tavily.",
+        "Always keep tone motivational and easy to grasp."
+    ],
+    show_tool_calls=True,
+    markdown=True,
+    add_datetime_to_instructions=False
+)
+
+st.set_page_config(page_title="📘 SikshaSathi", layout="wide")
+st.title("📘 SikshaSathi - Doubt Solver")
 
 exam_type = st.selectbox("Choose Exam:", ["NEET", "JEE", "UPSC", "Class XII"])
-language = st.selectbox("Preferred Language:", ["English", "Hindi", "Odia"])
+preferred_language = st.selectbox("Preferred Language:", ["Auto-Detect", "English", "Hindi", "Odia"])
 
+import tempfile
 
-st.markdown("### 🎙 Or Upload an Audio Doubt")
 audio_input = st.audio_input("🎤 Speak your doubt (optional)")
 transcribed_text = ""
 
@@ -97,30 +67,41 @@ if audio_input:
 
 query = st.text_area("Type your doubt:", value=transcribed_text)
 
-if st.button("🧠 Clear My Doubt"):
+if st.button("🧠 Get Solution"):
     if not query.strip():
-        st.warning("⚠ Please enter a valid doubt.")
+        st.warning("Please enter your doubt.")
     else:
         full_query = f"{exam_type} Doubt: {query}"
-        answer = get_ai_response(full_query)
-        videos = get_youtube_links(query)
-        log_doubt(full_query, answer, videos)
-
-        st.markdown("### ✅ AI Answer:")
-        st.write(answer)
-
-        if language != "English":
+        
+        with st.spinner("Thinking..."):
+            response = sutra_agent.run(full_query).content.strip()
+            detected_language = "English"
             try:
-                translator = Translator()
-                lang_code = {"Hindi": "hi", "Odia": "or"}[language]
-                translated = translator.translate(answer, dest=lang_code).text
-                st.markdown(f"### 🌐 Translated Answer ({language}):")
-                st.write(translated)
-            except Exception:
-                st.warning("⚠ Translation unavailable right now.")
+                detected_language = langdetect.detect(query)
+            except:
+                pass
 
-        st.markdown("### 📺 Recommended Videos:")
-        for link in videos:
-            st.markdown(f"[Watch here]({link})")
+            target_language = preferred_language
+            if preferred_language == "Auto-Detect":
+                lang_map = {'en': 'English', 'hi': 'Hindi', 'or': 'Odia'}
+                target_language = lang_map.get(detected_language, "English")
+            if target_language != "English":
+                try:
+                    translator = Translator()
+                    lang_codes = {"Hindi": "hi", "Odia": "or"}
+                    lang_code = lang_codes.get(target_language, "en")
+                    translated_response = translator.translate(response, dest=lang_code).text
+                    st.markdown(f"### 🌐 Translated Answer ({target_language}):")
+                    st.write(translated_response)
+                except Exception as e:
+                    st.warning(f"Translation unavailable: {e}")
 
-        st.success("✅ Doubt saved with EduChain!")
+            st.markdown("### ✅ AI Answer:")
+            st.write(response)
+
+            st.success(f"✅ Detected Language: {target_language}")
+
+            st.markdown("### 📺 Suggested Videos:")
+            for line in response.splitlines():
+                if "youtube.com/watch" in line:
+                    st.markdown(f"[Watch here]({line.strip()})")

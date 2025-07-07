@@ -9,20 +9,16 @@ import dotenv
 
 # --- Load environment variables ---
 dotenv.load_dotenv()
-GOOGLE_API_KEY = os.getenv("AIzaSyA8OV2W_9Ij5U0gBrXomwW2Vsz6EePMgT0")
+GOOGLE_API_KEY = os.getenv("GEMINI_KEY")
 
 # --- Configure Gemini ---
-genai.configure(api_key="AIzaSyA8OV2W_9Ij5U0gBrXomwW2Vsz6EePMgT0")
+genai.configure(api_key=GOOGLE_API_KEY)
 gemini_flash = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
-    google_api_key="AIzaSyA8OV2W_9Ij5U0gBrXomwW2Vsz6EePMgT0"
+    google_api_key=GOOGLE_API_KEY,
 )
 flash_config = LLMConfig(custom_model=gemini_flash)
 client = Educhain(flash_config)
-
-#logo
-
-
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="SikshaSathi(ଶିକ୍ଷାସାଥୀ)| AI Smart Lesson", layout="wide")

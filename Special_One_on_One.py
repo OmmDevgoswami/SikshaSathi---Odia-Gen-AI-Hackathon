@@ -1,11 +1,13 @@
 import streamlit as st
 import requests
+import os
+import dotenv
+dotenv.load_dotenv()
 
 # Sheetly API Config
 SHEETLY_API_URL = "https://api.sheety.co/690912ab2d5431ff9ad361fb8b81f47a/sessioRecord/sheet1"
-SHEETLY_API_KEY = "Bearer hackathonlist"
+SHEETLY_API_KEY = os.getenv("SHEETLY_API_KEY")  
 
-# Hardcoded Mentors, Subjects, and Multiple Time Slots
 mentor_data = {
     "JEE": {
         "Mathematics": {"mentor": "Dharmeshwar Mehta", "times": ["10:00 AM", "11:00 AM", "2:00 PM"]},
@@ -58,11 +60,10 @@ def mentor_slot(subject, mentor_name, time_slots):
                     "User Email": email
                 }
                 headers = {
-                    "Authorization": f"{SHEETLY_API_KEY}",  # Already has 'Bearer'
+                    "Authorization": f"{SHEETLY_API_KEY}", 
                     "Content-Type": "application/json"
                 }
-                response = requests.post(SHEETLY_API_URL, json={"sheet1": booking_data}, headers=headers)  # <-- lowercase 'sheet1
-
+                response = requests.post(SHEETLY_API_URL, json={"sheet1": booking_data}, headers=headers)
                 if response.status_code == 200:
                     st.success("Booking Confirmed and Saved!")
                 else:

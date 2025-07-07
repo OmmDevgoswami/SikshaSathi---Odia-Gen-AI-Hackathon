@@ -3,11 +3,16 @@ import streamlit as st
 import time
 from educhain import Educhain, LLMConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+
+GOOGLE_API_KEY = os.getenv("GEMINI_KEY")
 # --- Setup Gemini model ---
 gemini_model = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
-    google_api_key="AIzaSyA8OV2W_9Ij5U0gBrXomwW2Vsz6EePMgT0"  # Replace with your actual key
+    google_api_key =  GOOGLE_API_KEY
 )
 gemini_config = LLMConfig(custom_model=gemini_model)
 client = Educhain(gemini_config)
