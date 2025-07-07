@@ -47,19 +47,19 @@ Our porject achieved the 1st prize !!
   <tr>
     <td align="center">
       <a href="https://github.com/abhiz404">
-        <img src="https://avatars.githubusercontent.com/u/215194669?v=4" style="border-radius:50%;" alt="Annanya Devi"/><br />
+        <img src="https://avatars.githubusercontent.com/u/215194669?v=4" width="100px;" style="border-radius:50%;" alt="AbhishekZ"/><br />
         <sub><b>Abhishek Z</b></sub>
       </a><br />
     </td>
     <td align="center">
       <a href="https://github.com/Spandeeee">
-        <img src="https://avatars.githubusercontent.com/u/168364647?v=4" style="border-radius:50%;" alt="Ewa"/><br />
+        <img src="https://avatars.githubusercontent.com/u/168364647?v=4" width="100px;" style="border-radius:50%;" alt="Spandan"/><br />
         <sub><b>Spandan Behera</b></sub>
       </a><br />
     </td>
     <td align="center">
       <a href="https://github.com/SwagatRanjanBehera">
-        <img src="https://avatars.githubusercontent.com/u/119055799?v=4" alt="Mary"/><br />
+        <img src="https://avatars.githubusercontent.com/u/119055799?v=4" width="100px;" style="border-radius:50%;"  alt="Swagat"/><br />
         <sub><b>Swagat Ranajn Behera</b></sub>
       </a><br />
     </td>
