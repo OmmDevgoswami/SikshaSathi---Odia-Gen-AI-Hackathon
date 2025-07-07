@@ -9,7 +9,7 @@ st.markdown("""
     <h3 style='color: gray;'> From Boards to Big Dreams — SikshaSathi Stands By You!! </h3>
     <br />
     <div style='margin-top: 10px;'>
-        <a href='https://github.com/OmmDevgoswami/SikshaSathi' target='_blank' style='text-decoration: none; margin: 0 10px;'>🔗 SikshaSathi GitHub</a>
+        <a href='https://github.com/OmmDevgoswami/SikshaSathi---Odia-Gen-AI-Hackathon' target='_blank' style='text-decoration: none; margin: 0 10px;'>🔗 SikshaSathi GitHub</a>
         <p style='color: gray;'> Built using Python - Streamlit, Educhain LLM and Sutra-multilingual model </p>
     </div>
 </div>
